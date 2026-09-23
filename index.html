@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yuk, Berhitung Buah!</title>
+    
+    <!-- Google Fonts: Fredoka & Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Canvas Confetti for Reward Scene -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* Custom Font Application */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #bae6fd; /* Biru langit ceria */
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: manipulation; /* Optimize for touch */
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+        h1, h2, h3, .font-fredoka, button {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Custom Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+            50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite;
+        }
+
+        @keyframes pulse-grow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse-grow {
+            animation: pulse-grow 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Fruit interaction styling */
+        .fruit-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .fruit-item:active {
+            transform: scale(0.8);
+        }
+        
+        /* Scene transitions */
+        .scene {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+        }
+        .scene.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Wooden Board styling */
+        .wood-board {
+            background-color: #d97706; /* amber-600 */
+            border: 8px solid #92400e; /* amber-800 */
+            border-radius: 1.5rem;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="bg-sky-200 w-screen h-screen relative">
+
+    <div id="scene-0" class="scene active flex-col items-center justify-center bg-gradient-to-b from-sky-300 to-emerald-400">
+        <div class="text-6xl mb-4 animate-bounce-slow">🍎</div>
+        <h1 class="text-3xl md:text-4xl text-white font-bold mb-6 text-center drop-shadow-md px-4">
+            Menyiapkan Kebun Buah...<br>
+            <span class="text-xl md:text-2xl font-normal">Tunggu sebentar ya, Teman-teman! 🍓🍌🍊</span>
+        </h1>
+        <div class="w-64 h-8 bg-white/50 rounded-full overflow-hidden border-4 border-white">
+            <div id="loading-bar" class="h-full bg-amber-400 w-0 transition-all duration-300 ease-out"></div>
+        </div>
+    </div>
+
+    <div id="scene-1" class="scene flex-col items-center justify-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC40Ii8+PC9zdmc+')] bg-sky-200 relative overflow-hidden">
+        
+        <!-- Floating fruits background -->
+        <div class="absolute top-10 left-10 text-5xl animate-float" style="animation-delay: 0s;">🍎</div>
+        <div class="absolute top-20 right-20 text-6xl animate-float" style="animation-delay: 1s;">🍌</div>
+        <div class="absolute bottom-32 left-20 text-6xl animate-float" style="animation-delay: 0.5s;">🍊</div>
+        <div class="absolute bottom-20 right-10 text-5xl animate-float" style="animation-delay: 1.5s;">🍓</div>
+
+        <div class="wood-board px-8 py-6 mb-8 text-center bg-gradient-to-br from-amber-500 to-orange-500 border-white z-10 transform -rotate-2">
+            <h1 class="text-4xl md:text-6xl font-bold text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tracking-wide">
+                Yuk, Berhitung Buah!
+            </h1>
+        </div>
+
+        <!-- Mascot placeholder (SVG) -->
+        <div class="mb-8 z-10 animate-bounce-slow cursor-pointer" onclick="playMascotAudio()">
+            <svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Fruits in bowl -->
+                <circle cx="70" cy="60" r="30" fill="#EF4444" /> <!-- Apple -->
+                <path d="M110 30 Q 150 20 160 60 Q 120 70 110 30" fill="#FBBF24" /> <!-- Banana -->
+                <circle cx="130" cy="70" r="25" fill="#F97316" /> <!-- Orange -->
+                <!-- Bowl -->
+                <path d="M20 70 L 180 70 Q 180 140 100 140 Q 20 140 20 70 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="8"/>
+                <!-- Face -->
+                <circle cx="80" cy="100" r="6" fill="#1F2937" />
+                <circle cx="120" cy="100" r="6" fill="#1F2937" />
+                <path d="M90 115 Q 100 130 110 115" stroke="#1F2937" stroke-width="5" stroke-linecap="round" fill="none"/>
+                <!-- Blush -->
+                <circle cx="65" cy="110" r="8" fill="#F87171" opacity="0.6"/>
+                <circle cx="135" cy="110" r="8" fill="#F87171" opacity="0.6"/>
+            </svg>
+        </div>
+
+        <button onclick="startGame()" class="z-10 bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-12 rounded-full text-3xl md:text-5xl border-b-8 border-red-700 active:border-b-0 active:translate-y-2 transition-all animate-pulse-grow shadow-2xl">
+            M U L A I
+        </button>
+
+        <div class="absolute bottom-4 text-sky-700 font-bold bg-white/50 px-4 py-1 rounded-full">
+            🔊 Pastikan volume suara menyala ya!
+        </div>
+    </div>
+
+    <div id="scene-2" class="scene flex-col items-center justify-center bg-emerald-400 relative">
+        <h2 class="text-3xl md:text-5xl font-bold text-white mb-10 drop-shadow-lg text-center px-4">
+            Mau Ngapain Kita Hari Ini?<br>Pilih ya!
+        </h2>
+
+        <div class="flex flex-col md:flex-row gap-8 z-10 w-full max-w-4xl px-4 justify-center">
+            <!-- Card Belajar -->
+            <div class="wood-board flex-1 p-6 flex flex-col items-center transform transition hover:scale-105 bg-amber-100 border-amber-800 cursor-pointer" onclick="goToLearnMode()">
+                <div class="text-7xl mb-4 bg-white rounded-full p-4 shadow-inner">🔍</div>
+                <h3 class="text-4xl font-bold text-amber-900 mb-4">BELAJAR</h3>
+                <button class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full text-2xl border-b-4 border-emerald-700 w-full shadow-lg">
+                    Mulai Belajar
+                </button>
+            </div>
+
+            <!-- Card Bermain -->
+            <div class="wood-board flex-1 p-6 flex flex-col items-center transform transition hover:scale-105 bg-amber-100 border-amber-800 cursor-pointer" onclick="goToPlayMode()">
+                <div class="text-7xl mb-4 bg-white rounded-full p-4 shadow-inner">⭐</div>
+                <h3 class="text-4xl font-bold text-amber-900 mb-4">BERMAIN</h3>
+                <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full text-2xl border-b-4 border-red-700 w-full shadow-lg">
+                    Main Kuis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scene-3" class="scene flex-col items-center justify-between bg-emerald-100 py-6 px-4">
+        <!-- Header -->
+        <div class="w-full flex justify-between items-center max-w-4xl">
+            <button onclick="goToScene('scene-2')" class="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-full border-b-4 border-amber-700 text-xl font-bold">
+                🏠 Menu
+            </button>
+            <div class="bg-white px-6 py-2 rounded-full shadow-md font-bold text-emerald-700 text-xl border-2 border-emerald-300">
+                Materi <span id="learn-step-indicator">1 / 3</span>
+            </div>
+            <div class="w-12"></div> <!-- Spacer for flex centering -->
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center flex-1 my-6 border-4 border-emerald-200 flex justify-center">
+            
+            <div class="flex items-center justify-center gap-4 md:gap-8 w-full mb-8">
+                <!-- Group A -->
+                <div class="flex-1 flex flex-wrap justify-center gap-2 bg-blue-50 rounded-2xl p-4 min-h-[150px] border-2 border-blue-200" id="learn-group-a">
+                    <!-- Fruits injected via JS -->
+                </div>
+                
+                <div class="text-5xl font-bold text-gray-400">+</div>
+                
+                <!-- Group B -->
+                <div class="flex-1 flex flex-wrap justify-center gap-2 bg-pink-50 rounded-2xl p-4 min-h-[150px] border-2 border-pink-200" id="learn-group-b">
+                    <!-- Fruits injected via JS -->
+                </div>
+                
+                <div class="text-5xl font-bold text-gray-400">=</div>
+                
+                <!-- Result Box -->
+                <div id="learn-result-box" class="w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-2xl flex items-center justify-center border-4 border-dashed border-gray-400 text-6xl font-bold text-gray-500 transition-all duration-300">
+                    ?
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button id="btn-hitung-bersama" onclick="hitungBersama()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-10 rounded-full text-2xl border-b-6 border-emerald-700 active:border-b-0 active:translate-y-2 transition-all shadow-xl">
+                Tampilkan Hasil!
+            </button>
+        </div>
+
+        <!-- Footer Nav -->
+        <div class="w-full flex justify-between max-w-4xl">
+            <button id="btn-learn-prev" onclick="prevLearn()" class="bg-sky-400 hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-full text-xl border-b-4 border-sky-600 shadow-md invisible">
+                ◀ KEMBALI
+            </button>
+            <button id="btn-learn-next" onclick="nextLearn()" class="bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-full text-xl border-b-4 border-amber-600 shadow-md hidden">
+                LANJUT ▶
+            </button>
+        </div>
+    </div>
+
+    <div id="scene-4" class="scene flex-col items-center justify-between bg-sky-100 py-6 px-4">
+        <!-- Header -->
+        <div class="w-full flex justify-between items-center max-w-4xl">
+            <button onclick="goToScene('scene-2')" class="bg-amber-500 text-white p-3 rounded-full border-b-4 border-amber-700 text-xl font-bold">
+                🏠 Menu
+            </button>
+            
+            <div class="flex gap-1" id="quiz-stars">
+                <!-- Stars injected via JS -->
+            </div>
+
+            <div class="bg-white px-6 py-2 rounded-full shadow-md font-bold text-sky-700 text-xl border-2 border-sky-300">
+                Soal <span id="quiz-step-indicator">1/5</span>
+            </div>
+        </div>
+
+        <h2 class="text-2xl md:text-4xl font-bold text-sky-800 my-4 text-center">
+            Ada berapa semua buah di bawah ini?
+        </h2>
+
+        <!-- Problem Area -->
+        <div class="w-full max-w-4xl flex items-center justify-center gap-2 md:gap-8 mb-8 mt-4">
+             <div class="flex-1 flex flex-wrap justify-center gap-1 md:gap-2" id="quiz-group-a"></div>
+             <div class="text-4xl md:text-6xl font-bold text-sky-400">+</div>
+             <div class="flex-1 flex flex-wrap justify-center gap-1 md:gap-2" id="quiz-group-b"></div>
+             <div class="text-4xl md:text-6xl font-bold text-sky-400">=</div>
+             <!-- Modified Result Box for animation target -->
+             <div id="quiz-result-box" class="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl flex items-center justify-center border-4 border-dashed border-sky-400 text-5xl font-bold text-sky-300 shadow-inner relative transition-all duration-300">
+                <span id="quiz-result-text">?</span>
+             </div>
+        </div>
+
+        <!-- Answers Area -->
+        <div class="flex w-full justify-center gap-4 md:gap-8 max-w-3xl mb-8 relative" id="quiz-answers">
+            <!-- Answer bowls injected via JS -->
+        </div>
+    </div>
+
+    <div id="scene-5" class="scene flex-col items-center justify-center bg-gradient-to-b from-amber-200 to-orange-400 relative overflow-hidden">
+        
+        <!-- Shimmer background -->
+        <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBvbHlnb24gcG9pbnRzPSIyMCwwIDI0LDE2IDQwLDIwIDI0LDI0IDIwLDQwIDE2LDI0IDAsMjAgMTYsMTYiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]"></div>
+
+        <h1 class="text-5xl md:text-7xl font-bold text-white mb-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.4)] text-center animate-bounce-slow z-10">
+            HORE!<br>LUAR BIASA! 🎉
+        </h1>
+        <p class="text-2xl md:text-3xl text-amber-900 font-bold mb-8 z-10 text-center px-4 bg-white/50 py-2 rounded-full mt-4">
+            Kamu sudah pintar berhitung buah!
+        </p>
+
+        <!-- Big Trophy -->
+        <div class="relative mb-12 z-10">
+            <div class="text-[150px] md:text-[200px] leading-none drop-shadow-2xl">🏆</div>
+            <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white font-bold py-2 px-6 rounded-full border-4 border-white text-2xl shadow-lg flex items-center gap-2 w-max">
+                Bintang: <span id="final-score">5/5</span> ⭐
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 z-10 mt-4">
+            <button onclick="goToPlayMode()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-10 rounded-full text-2xl border-b-6 border-red-700 shadow-xl flex items-center gap-2 transition hover:scale-105">
+                🍎 MAIN LAGI
+            </button>
+            <button onclick="goToScene('scene-2')" class="bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 px-10 rounded-full text-2xl border-b-6 border-amber-900 shadow-xl flex items-center gap-2 transition hover:scale-105">
+                🪵 MENU UTAMA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        const learnData = [
+            { fruit: '🍊', name: 'Jeruk', a: 2, b: 1 },
+            { fruit: '🍓', name: 'Stroberi', a: 3, b: 2 },
+            { fruit: '🍎', name: 'Apel', a: 4, b: 2 }
+        ];
+
+        const quizData = [
+            { fruit: '🍌', name: 'Pisang', a: 2, b: 2, options: [3, 4, 5], correct: 4 },
+            { fruit: '🍊', name: 'Jeruk', a: 3, b: 2, options: [4, 5, 6], correct: 5 },
+            { fruit: '🍎', name: 'Apel', a: 4, b: 3, options: [6, 7, 8], correct: 7 },
+            { fruit: '🍓', name: 'Stroberi', a: 5, b: 3, options: [7, 8, 9], correct: 8 },
+            { fruit: '🍇', name: 'Anggur', a: 5, b: 5, options: [8, 9, 10], correct: 10 }
+        ];
+
+        let state = {
+            currentScene: 'scene-0',
+            learnIndex: 0,
+            quizIndex: 0,
+            stars: 0,
+            isHitungBersamaDone: false,
+            audioContext: null // Initialize on first interaction
+        };
+
+        // --- AUDIO ENGINE (TTS & Synth SFX) ---
+        
+        // 1. Web Speech API (TTS)
+        const synth = window.speechSynthesis;
+        let idVoice = null;
+
+        function initVoices() {
+            const voices = synth.getVoices();
+            // Try to find Indonesian voice
+            idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID')) || voices[0];
+        }
+        
+        // Browsers load voices asynchronously
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = initVoices;
+        }
+
+        function speak(text, rate = 0.85, pitch = 1.1, onEndCallback = null) {
+            if (synth.speaking) synth.cancel(); // Stop current speech
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (idVoice) utterance.voice = idVoice;
+            utterance.rate = rate; // Pelan untuk anak TK
+            utterance.pitch = pitch; // Nada ramah
+            utterance.lang = 'id-ID';
+            
+            // Tambahkan pendeteksi ketika suara selesai berbicara
+            if (onEndCallback) {
+                utterance.onend = onEndCallback;
+            }
+            
+            synth.speak(utterance);
+        }
+
+        // 2. Web Audio API (Synthesizer SFX)
+        function initAudioContext() {
+            if (!state.audioContext) {
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (state.audioContext.state === 'suspended') {
+                state.audioContext.resume();
+            }
+        }
+
+        function playSynth(type, freq, duration, vol = 0.5) {
+            if (!state.audioContext) return;
+            const osc = state.audioContext.createOscillator();
+            const gain = state.audioContext.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, state.audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(vol, state.audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, state.audioContext.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(state.audioContext.destination);
+            
+            osc.start();
+            osc.stop(state.audioContext.currentTime + duration);
+        }
+
+        function playPop() { playSynth('sine', 600, 0.1, 0.5); }
+        function playBoing() { playSynth('triangle', 150, 0.4, 0.8); }
+        function playChime() {
+            if (!state.audioContext) return;
+            playSynth('sine', 800, 0.2, 0.3);
+            setTimeout(() => playSynth('sine', 1000, 0.2, 0.3), 100);
+            setTimeout(() => playSynth('sine', 1200, 0.4, 0.3), 200);
+        }
+        function playVictory() {
+            if (!state.audioContext) return;
+            playSynth('square', 440, 0.2, 0.3); // A4
+            setTimeout(() => playSynth('square', 554, 0.2, 0.3), 200); // C#5
+            setTimeout(() => playSynth('square', 659, 0.2, 0.3), 400); // E5
+            setTimeout(() => playSynth('square', 880, 0.6, 0.3), 600); // A5
+        }
+
+        
+        // --- SCENE MANAGEMENT ---
+        function goToScene(sceneId) {
+            // Hide all
+            document.querySelectorAll('.scene').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Show target
+            document.getElementById(sceneId).classList.add('active');
+            state.currentScene = sceneId;
+            
+            // Cancel any playing speech when switching scenes
+            synth.cancel();
+        }
+
+        // Scene 0: Loading Simulation
+        window.onload = () => {
+            initVoices();
+            let progress = 0;
+            const bar = document.getElementById('loading-bar');
+            
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 20) + 10;
+                if (progress > 100) progress = 100;
+                bar.style.width = progress + '%';
+                
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => goToScene('scene-1'), 500);
+                }
+            }, 300);
+        };
+
+        // Scene 1 Actions
+        function startGame() {
+            initAudioContext(); // Crucial: unlock audio context on first user click
+            speak(""); // Warm up TTS engine
+            
+            speak("Mau ngapain kita hari ini? Pilih tombol BELAJAR atau BERMAIN ya!");
+            goToScene('scene-2');
+        }
+
+        function playMascotAudio() {
+            initAudioContext();
+            playPop();
+            speak("Halo! Aku mangkuk buah ceria! Ayo kita belajar berhitung!");
+        }
+
+        
+        // --- LEARN MODE ---
+        function goToLearnMode() {
+            state.learnIndex = 0;
+            renderLearn();
+            goToScene('scene-3');
+        }
+
+        function renderLearn() {
+            state.isHitungBersamaDone = false;
+            const data = learnData[state.learnIndex];
+            
+            document.getElementById('learn-step-indicator').innerText = `${state.learnIndex + 1} / ${learnData.length}`;
+            
+            const groupA = document.getElementById('learn-group-a');
+            const groupB = document.getElementById('learn-group-b');
+            
+            groupA.innerHTML = '';
+            groupB.innerHTML = '';
+            
+            // Function to create interactive fruit
+            const createFruit = (fruitIcon, delay) => {
+                const el = document.createElement('div');
+                el.className = 'text-5xl md:text-6xl fruit-item drop-shadow-md animate-float relative';
+                el.style.animationDelay = `${delay}s`;
+                el.innerText = fruitIcon;
+                
+                // Add touch-to-count interaction
+                el.onclick = () => {
+                    initAudioContext();
+                    playPop();
+                    // Temporary scale effect handled by CSS :active, but let's add a visual cue
+                    el.style.transform = 'scale(0.8)';
+                    setTimeout(() => el.style.transform = '', 150);
+                    
+                    // The blueprint asks for sequential counting, but for free-click, 
+                    // saying the fruit name is better to avoid confusing the total sum later.
+                    speak(data.name); 
+                };
+                return el;
+            };
+
+            for(let i=0; i<data.a; i++) groupA.appendChild(createFruit(data.fruit, i*0.2));
+            for(let i=0; i<data.b; i++) groupB.appendChild(createFruit(data.fruit, (i+data.a)*0.2));
+
+            // Reset Result Box
+            const resBox = document.getElementById('learn-result-box');
+            resBox.innerText = '?';
+            resBox.className = 'w-24 h-24 md:w-32 md:h-32 bg-gray-200 rounded-2xl flex items-center justify-center border-4 border-dashed border-gray-400 text-6xl font-bold text-gray-500 transition-all duration-300';
+
+            // Buttons
+            document.getElementById('btn-learn-prev').style.visibility = state.learnIndex > 0 ? 'visible' : 'hidden';
+            document.getElementById('btn-learn-next').classList.add('hidden');
+            document.getElementById('btn-hitung-bersama').classList.remove('hidden');
+
+            speak(`Mari kita hitung ${data.name}.`);
+        }
+
+        function hitungBersama() {
+            if(state.isHitungBersamaDone) return;
+            state.isHitungBersamaDone = true;
+            
+            const data = learnData[state.learnIndex];
+            const total = data.a + data.b;
+            
+            // Build sequence string for TTS: "Satu.. Dua.. Tiga..."
+            let countText = "";
+            for(let i=1; i<=total; i++) {
+                countText += i + ", ";
+            }
+            countText += `. Semuanya ada ${total} ${data.name}!`;
+            
+            // Memanggil fungsi speak dengan callback yang akan dijalankan SETELAH suara selesai
+            speak(countText, 0.7, 1.1, () => {
+                // Tampilkan hasil secara magis setelah suara berhenti
+                playChime();
+                const resBox = document.getElementById('learn-result-box');
+                resBox.innerText = total;
+                // Change style to green
+                resBox.className = 'w-24 h-24 md:w-32 md:h-32 bg-emerald-100 rounded-2xl flex items-center justify-center border-4 border-solid border-emerald-500 text-6xl font-bold text-emerald-600 transition-all duration-500 transform scale-110 shadow-lg animate-pulse-grow';
+                
+                // Show Next button
+                document.getElementById('btn-hitung-bersama').classList.add('hidden');
+                const nextBtn = document.getElementById('btn-learn-next');
+                nextBtn.classList.remove('hidden');
+                
+                // If last level, change text to "Main Kuis"
+                if(state.learnIndex === learnData.length - 1) {
+                    nextBtn.innerText = "MAIN KUIS ▶";
+                    nextBtn.className = nextBtn.className.replace('bg-amber-400', 'bg-red-500').replace('hover:bg-amber-500', 'hover:bg-red-600').replace('border-amber-600', 'border-red-700');
+                } else {
+                    nextBtn.innerText = "LANJUT ▶";
+                    nextBtn.className = "bg-amber-400 hover:bg-amber-500 text-white font-bold py-3 px-8 rounded-full text-xl border-b-4 border-amber-600 shadow-md";
+                }
+                
+                // Confetti mini
+                confetti({
+                    particleCount: 30,
+                    spread: 50,
+                    origin: { y: 0.6 },
+                    colors: ['#34d399', '#fbbf24', '#ef4444']
+                });
+            });
+        }
+
+        function nextLearn() {
+            if (state.learnIndex < learnData.length - 1) {
+                state.learnIndex++;
+                renderLearn();
+            } else {
+                goToPlayMode();
+            }
+        }
+
+        function prevLearn() {
+            if (state.learnIndex > 0) {
+                state.learnIndex--;
+                renderLearn();
+            }
+        }
+
+        
+        // --- PLAY MODE (QUIZ) ---
+        function goToPlayMode() {
+            state.quizIndex = 0;
+            state.stars = 0;
+            renderQuiz();
+            goToScene('scene-4');
+        }
+
+        function renderQuiz() {
+            const data = quizData[state.quizIndex];
+            
+            // Update UI Header
+            document.getElementById('quiz-step-indicator').innerText = `${state.quizIndex + 1}/5`;
+            
+            // Render Stars
+            let starHtml = '';
+            for(let i=0; i<5; i++) {
+                starHtml += `<div class="text-2xl ${i < state.stars ? 'text-amber-400' : 'text-gray-300 grayscale'}">⭐</div>`;
+            }
+            document.getElementById('quiz-stars').innerHTML = starHtml;
+
+            // Render Fruits
+            const groupA = document.getElementById('quiz-group-a');
+            const groupB = document.getElementById('quiz-group-b');
+            groupA.innerHTML = ''; groupB.innerHTML = '';
+            
+            for(let i=0; i<data.a; i++) groupA.innerHTML += `<div class="text-4xl md:text-5xl drop-shadow-sm">${data.fruit}</div>`;
+            for(let i=0; i<data.b; i++) groupB.innerHTML += `<div class="text-4xl md:text-5xl drop-shadow-sm">${data.fruit}</div>`;
+
+            // Reset Result Box
+            const resultBox = document.getElementById('quiz-result-box');
+            resultBox.className = 'w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl flex items-center justify-center border-4 border-dashed border-sky-400 text-5xl font-bold text-sky-300 shadow-inner relative transition-all duration-300';
+            document.getElementById('quiz-result-text').innerText = '?';
+            document.getElementById('quiz-result-text').style.opacity = '1';
+
+
+            // Render Answers
+            const ansContainer = document.getElementById('quiz-answers');
+            ansContainer.innerHTML = '';
+            
+            data.options.forEach(opt => {
+                const btn = document.createElement('button');
+                // Bowl styling
+                btn.className = 'relative w-24 h-24 md:w-32 md:h-32 flex flex-col items-center justify-end pb-4 transition-transform hover:-translate-y-2';
+                // Added an ID for animation tracking if needed, though we use the element reference directly
+                btn.id = `bowl-opt-${opt}`;
+                
+                // SVG Bowl Background
+                btn.innerHTML = `
+                    <svg class="absolute inset-0 w-full h-full drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 40 L 90 40 Q 90 90 50 90 Q 10 90 10 40 Z" fill="#D97706" stroke="#92400E" stroke-width="4"/>
+                        <ellipse cx="50" cy="40" rx="40" ry="10" fill="#FBBF24" stroke="#92400E" stroke-width="4"/>
+                    </svg>
+                    <span class="relative z-10 text-4xl md:text-5xl font-bold text-amber-900 drop-shadow-sm mb-2 font-fredoka">${opt}</span>
+                `;
+                
+                btn.onclick = () => checkAnswer(opt, btn, data);
+                ansContainer.appendChild(btn);
+            });
+
+            // Initial instruction
+            speak(`Berapa jumlah semua ${data.name} ini? Tekan angka di mangkuk bawah ya!`);
+        }
+
+        function checkAnswer(selected, btnElement, data) {
+            initAudioContext();
+            
+            // Disable buttons temporarily
+            const allBtns = document.getElementById('quiz-answers').querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
+
+            const resultBox = document.getElementById('quiz-result-box');
+            const resultText = document.getElementById('quiz-result-text');
+
+            if (selected === data.correct) {
+                // CORRECT
+                state.stars++;
+                
+                // Change bowl color to green visually
+                const paths = btnElement.querySelectorAll('path, ellipse');
+                paths[0].setAttribute('fill', '#10B981'); // Emerald-500
+                paths[0].setAttribute('stroke', '#047857');
+                paths[1].setAttribute('fill', '#34D399'); 
+                paths[1].setAttribute('stroke', '#047857');
+                btnElement.querySelector('span').classList.add('text-white');
+                
+                // --- ANIMATION: Fly to Result Box ---
+                // 1. Get coordinates
+                const btnRect = btnElement.getBoundingClientRect();
+                const boxRect = resultBox.getBoundingClientRect();
+                
+                // 2. Calculate translation needed
+                const deltaX = boxRect.left + (boxRect.width/2) - (btnRect.left + btnRect.width/2);
+                const deltaY = boxRect.top + (boxRect.height/2) - (btnRect.top + btnRect.height/2);
+                
+                // 3. Hide the original '?'
+                resultText.style.opacity = '0';
+                
+                // 4. Apply transformation (fly and scale down slightly to fit)
+                btnElement.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'; // Bouncy curve
+                btnElement.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.8)`;
+                btnElement.style.zIndex = '50';
+
+                // 5. Change Result Box style immediately
+                resultBox.className = 'w-24 h-24 md:w-32 md:h-32 bg-emerald-100 rounded-2xl flex items-center justify-center border-4 border-solid border-emerald-500 relative transition-all duration-300 transform scale-105';
+
+
+                playChime();
+                speak(`Wah, kamu pintar sekali! Jawabannya benar ${data.correct}!`);
+                
+                // Confetti at destination
+                setTimeout(() => {
+                    const x = (boxRect.left + boxRect.width / 2) / window.innerWidth;
+                    const y = (boxRect.top + boxRect.height / 2) / window.innerHeight;
+                    confetti({ particleCount: 50, spread: 60, origin: { x, y } });
+                }, 500);
+
+                // Next level
+                setTimeout(() => {
+                    if (state.quizIndex < quizData.length - 1) {
+                        state.quizIndex++;
+                        renderQuiz();
+                    } else {
+                        goToReward();
+                    }
+                }, 2800); // Increased delay slightly to let animation finish
+
+            } else {
+                // INCORRECT
+                playBoing();
+                btnElement.classList.add('animate-shake');
+                speak("Ups! Coba hitung lagi yuk, ada berapa buahnya?");
+                
+                setTimeout(() => {
+                    btnElement.classList.remove('animate-shake');
+                    allBtns.forEach(b => b.disabled = false); // Re-enable
+                }, 1000);
+            }
+        }
+
+        
+        // --- REWARD SCENE ---
+        function goToReward() {
+            document.getElementById('final-score').innerText = `${state.stars}/5`;
+            goToScene('scene-5');
+            
+            playVictory();
+            speak("Horeee! Kamu luar biasa! Sudah bisa berhitung buah dengan hebat!");
+            
+            // Big confetti shower
+            const duration = 3000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+    </script>
+</body>
+</html>
